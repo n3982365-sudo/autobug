@@ -1,0 +1,99 @@
+version: "3.9"
+x-common: &common
+  restart: unless-stopped
+  networks: [autobug]
+  env_file: .env
+services:
+  postgres:
+    <<: *common
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      retries: 10
+  redis:
+    <<: *common
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+  minio:
+    <<: *common
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes: [miniodata:/data]
+    ports: ["9000:9000", "9001:9001"]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      retries: 10
+  api:
+    <<: *common
+    build: ./api
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./api:/app
+      - ./plugins:/app/plugins
+      - ./orchestrator:/app/orchestrator
+      - ./osint:/app/osint
+      - ./reports:/app/reports
+      - ./data:/app/data
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+  worker:
+    <<: *common
+    build: ./api
+    command: celery -A orchestrator.celery_app worker -l info -Q recon,active,vuln,exploit,report,osint --concurrency=4
+    volumes:
+      - ./api:/app
+      - ./plugins:/app/plugins
+      - ./orchestrator:/app/orchestrator
+      - ./osint:/app/osint
+      - ./reports:/app/reports
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+  beat:
+    <<: *common
+    build: ./api
+    command: celery -A orchestrator.celery_app beat -l info
+    volumes: [./api:/app, ./orchestrator:/app/orchestrator]
+    depends_on:
+      redis: { condition: service_healthy }
+  telegram:
+    <<: *common
+    build: ./api
+    command: python -m telegram.bot
+    volumes: [./api:/app, ./telegram:/app/telegram]
+    depends_on:
+      redis: { condition: service_healthy }
+  ui:
+    <<: *common
+    build: ./ui
+    command: npm run dev -- --host 0.0.0.0
+    volumes: [./ui:/app, /app/node_modules]
+    ports: ["5173:5173"]
+    environment:
+      VITE_API: http://localhost:8000
+volumes:
+  pgdata:
+  miniodata:
+networks:
+  autobug:
+    driver: bridge

@@ -1,0 +1,15 @@
+name: sqlmap
+category: vuln
+phase: [3]
+image: googlesecurity/sqlmap:latest
+inputs:
+  - { name: target, type: string, required: true }
+outputs:
+  - { name: result, type: text, path: "/out/result.txt" }
+command: >
+  docker run --rm -v {{workdir}}:/out googlesecurity/sqlmap:latest
+  -u "{{target}}" --batch --level=2 --risk=2 --output-dir=/out --flush-session
+timeout: 1800
+rate_limit: { max_concurrent: 2 }
+enabled: true
+tags: [sqli]

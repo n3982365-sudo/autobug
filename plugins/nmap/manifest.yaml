@@ -1,0 +1,16 @@
+name: nmap
+category: active
+phase: [2, 3]
+image: instrumentisto/nmap:latest
+inputs:
+  - { name: target, type: string, required: true }
+  - { name: ports,  type: string, default: "1-1000" }
+outputs:
+  - { name: open_ports, type: json, path: "/out/ports.json" }
+command: >
+  docker run --rm -v {{workdir}}:/out instrumentisto/nmap:latest
+  -sV -sC -p {{ports}} -oX /out/scan.xml -oJ /out/ports.json {{target}}
+timeout: 1800
+rate_limit: { max_concurrent: 4 }
+enabled: true
+tags: [network, ports]

@@ -1,0 +1,15 @@
+name: httpx
+category: active
+phase: [2, 3]
+image: projectdiscovery/httpx:latest
+inputs:
+  - { name: target, type: string, required: true }
+outputs:
+  - { name: live, type: json, path: "/out/live.json" }
+command: >
+  docker run --rm -v {{workdir}}:/out projectdiscovery/httpx:latest
+  -u {{target}} -silent -json -o /out/live.json -status-code -title -tech-detect
+timeout: 600
+rate_limit: { max_concurrent: 4 }
+enabled: true
+tags: [http, probe]

@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; color: #111; margin: 40px; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 32px; }
+  .counts { display: flex; gap: 16px; margin-bottom: 32px; }
+  .counts div { padding: 8px 14px; border-radius: 8px; background: #f4f4f5; font-size: 13px; }
+  .finding { page-break-inside: avoid; border-top: 1px solid #e4e4e7; padding-top: 16px; margin-top: 16px; }
+  .sev { text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+  .critical { color: #b91c1c; } .high { color: #c2410c; } .medium { color: #a16207; }
+  .low { color: #4d7c0f; } .info { color: #3b82f6; }
+  pre { background: #f4f4f5; padding: 12px; border-radius: 6px; font-size: 11px; overflow-x: auto; }
+</style>
+</head>
+<body>
+  <h1>AutoBug Report — {{ scan.target }}</h1>
+  <div class="meta">
+    scan #{{ scan.id }} · mode {{ scan.mode }} · status {{ scan.status }}<br>
+    started {{ scan.started }} · ended {{ scan.ended or "—" }}
+  </div>
+  <div class="counts">
+    {% for sev, n in counts.items() %}
+      <div class="{{ sev }}">{{ sev }}: {{ n }}</div>
+    {% endfor %}
+  </div>
+  {% for f in findings %}
+  <div class="finding">
+    <div class="sev {{ f.severity }}">{{ f.severity }}</div>
+    <h2>{{ f.title }}</h2>
+    <div style="color:#666;font-size:13px">{{ f.url }}</div>
+    <p>{{ f.desc }}</p>
+  </div>
+  {% endfor %}
+</body>
+</html>

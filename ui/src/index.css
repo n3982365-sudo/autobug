@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { --bg: #0A0A0B; --fg: #EDEDEF; --accent: #3B82F6; }
+html, body, #root { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }

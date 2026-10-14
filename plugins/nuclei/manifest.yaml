@@ -1,0 +1,15 @@
+name: nuclei
+category: vuln
+phase: [2, 3]
+image: projectdiscovery/nuclei:latest
+inputs:
+  - { name: target, type: string, required: true }
+outputs:
+  - { name: findings, type: json, path: "/out/findings.json" }
+command: >
+  docker run --rm -v {{workdir}}:/out projectdiscovery/nuclei:latest
+  -u {{target}} -silent -jsonl -o /out/findings.json -severity critical,high,medium,low,info
+timeout: 1800
+rate_limit: { max_concurrent: 4 }
+enabled: true
+tags: [cve, exposure, takeover]
